@@ -1,5 +1,6 @@
 import os
 import time
+import traceback
 
 import sdcardio
 import storage
@@ -26,8 +27,12 @@ class Saber:
         mods = [getattr(self.saber_build, n) for n in self.saber_build.__all__]
         self.modules = list(self.build_module_list(*mods))
         self.state = States.DEFAULT
-        for m in self.modules:
-            m.setup(None, self)
+        for (idx, m) in enumerate(self.modules):
+            conf_segment_name = type(m).__name__ + str(idx)
+            conf_segment = self.saber_build.CONFIG_MANAGER.get_config_segment(conf_segment_name)
+            m.setup(conf_segment, self)
+
+        self.saber_build.CONFIG_MANAGER.request_write()
 
         frame_num = 0
         frame_max = 0xFFFF
@@ -58,7 +63,8 @@ class Saber:
             except KeyboardInterrupt:
                 raise
             except Exception as e:
-                print(e)
+                print("Exception while changing state in module type:", type(m).__name__)
+                traceback.print_exception(e)
 
     def run_loop(self, state, frame_num):
         for m in self.modules:
@@ -67,7 +73,8 @@ class Saber:
             except KeyboardInterrupt:
                 raise
             except Exception as e:
-                print(e)
+                print("Exception while looping in module type:", type(m).__name__)
+                traceback.print_exception(e)
 
 
     def build_module_list(self, *pargs):

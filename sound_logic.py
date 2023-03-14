@@ -9,6 +9,7 @@ class Effects:
     RETRACT = 2
 
 class BasicSoundLogic(SaberModule):
+    master_volume = property(*SaberModule.build_config_prop_args('MASTER_VOLUME'))
 
     """ Which audiomixer.Mixer instance should be used for playing sounds. Should support 2+ voices."""
     mixer = None
@@ -25,6 +26,7 @@ class BasicSoundLogic(SaberModule):
 
     def setup(self, config, saber):
         super(BasicSoundLogic, self).setup(config, saber)
+        self.config.process_config_default('MASTER_VOLUME', 0.9)
 
     def change_sound_font(self, new_font):
         pass

@@ -3,9 +3,12 @@ from i2c_utils import I2CDevice
 from contracts import SaberModule, States
 from saber import Saber
 
+CONF_BRIGHTNESS_KEY = "button_brightness"
+
 class OnOffButton(SaberModule):
     default_brightness = 0x40
     clear_state_register = bytes([0x00])
+    current_brightness = property(*SaberModule.build_config_prop_args(CONF_BRIGHTNESS_KEY))
 
     i2c_address = 0x6F
     button = None
@@ -18,12 +21,14 @@ class OnOffButton(SaberModule):
 
     def __init__(self, i2c_address=None):
         super(OnOffButton, self).__init__()
+        self.brightness = self.default_brightness
 
         # If the user supplied an address, use it. Else, use our default.
         self.i2c_address = i2c_address or self.i2c_address
 
     def setup(self, config, saber: Saber):
         super(OnOffButton, self).setup(config, saber)
+        self.config.process_config_default(CONF_BRIGHTNESS_KEY, self.default_brightness)
 
     def set_button_to_off_state(self):
         with I2CDevice(self.i2c_address) as button:
@@ -34,14 +39,14 @@ class OnOffButton(SaberModule):
 
     def set_button_to_snooze_state(self):
         with I2CDevice(self.i2c_address) as button:
-            button.write_register(self.led_brightness_register, bytes([self.default_brightness]))
+            button.write_register(self.led_brightness_register, bytes([self.current_brightness]))
             button.write_register(self.led_step_count_register, bytes([0x0F]))
             button.write_register(self.led_pulse_on_register, bytes([0x07, 0xD0]))
             button.write_register(self.led_pulse_off_register, bytes([0x00, 0xFF]))
 
     def set_button_to_on_state(self):
         with I2CDevice(self.i2c_address) as button:
-            button.write_register(self.led_brightness_register, bytes([self.default_brightness]))
+            button.write_register(self.led_brightness_register, bytes([self.current_brightness]))
             button.write_register(self.led_step_count_register, bytes([0x0F]))
             button.write_register(self.led_pulse_on_register, bytes([0x00, 0x00]))
             button.write_register(self.led_pulse_off_register, bytes([0x00, 0xFF]))
