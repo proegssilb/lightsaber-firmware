@@ -1,5 +1,3 @@
-import board
-import busio
 from i2c_utils import I2CDevice
 
 from contracts import SaberModule, States

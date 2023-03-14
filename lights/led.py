@@ -1,6 +1,7 @@
 import pwmio
 
 from contracts import SaberModule, States
+from saber import Saber
 
 class AnalogLedController(SaberModule):
     pwm_out = None
