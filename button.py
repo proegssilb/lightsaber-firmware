@@ -1,14 +1,22 @@
-from i2c_utils import I2CDevice
+from adafruit_ble.services import Service
+from adafruit_ble.characteristics.int import Uint16Characteristic
 
 from contracts import SaberModule, States
+from i2c_utils import I2CDevice
 from saber import Saber
+from ble_utils import gen_service_id, make_characteristic_id_gen, CharPerms
+
 
 CONF_BRIGHTNESS_KEY = "button_brightness"
 
-class OnOffButton(SaberModule):
+SERVICE_ID = 0x00b1
+mk_char_id = make_characteristic_id_gen(SERVICE_ID)
+
+class OnOffButton(SaberModule, Service):
+    uuid = gen_service_id(SERVICE_ID)
     default_brightness = 0x40
     clear_state_register = bytes([0x00])
-    current_brightness = property(*SaberModule.build_config_prop_args(CONF_BRIGHTNESS_KEY))
+    current_button_brightness = Uint16Characteristic(uuid=mk_char_id(0x0001), initial_value=0x40, properties=CharPerms.RWN)
 
     i2c_address = 0x6F
     button = None
@@ -21,7 +29,6 @@ class OnOffButton(SaberModule):
 
     def __init__(self, i2c_address=None):
         super(OnOffButton, self).__init__()
-        self.brightness = self.default_brightness
 
         # If the user supplied an address, use it. Else, use our default.
         self.i2c_address = i2c_address or self.i2c_address
@@ -39,14 +46,14 @@ class OnOffButton(SaberModule):
 
     def set_button_to_snooze_state(self):
         with I2CDevice(self.i2c_address) as button:
-            button.write_register(self.led_brightness_register, bytes([self.current_brightness]))
+            button.write_register(self.led_brightness_register, bytes([self.current_button_brightness]))
             button.write_register(self.led_step_count_register, bytes([0x0F]))
             button.write_register(self.led_pulse_on_register, bytes([0x07, 0xD0]))
             button.write_register(self.led_pulse_off_register, bytes([0x00, 0xFF]))
 
     def set_button_to_on_state(self):
         with I2CDevice(self.i2c_address) as button:
-            button.write_register(self.led_brightness_register, bytes([self.current_brightness]))
+            button.write_register(self.led_brightness_register, bytes([self.current_button_brightness]))
             button.write_register(self.led_step_count_register, bytes([0x0F]))
             button.write_register(self.led_pulse_on_register, bytes([0x00, 0x00]))
             button.write_register(self.led_pulse_off_register, bytes([0x00, 0xFF]))

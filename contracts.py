@@ -15,7 +15,7 @@ class SaberModule:
 
     A Saber Module manages a particular subsystem of the saber.
     """
-    saber: Saber = None
+    saber = None
     config = None
 
     def setup(self, config, saber):
@@ -57,3 +57,4 @@ class SaberModule:
             lambda self: self.config.get_config_value(prop_name), 
             lambda self, val: self.config.set_config_value(prop_name, val)
             )
+
