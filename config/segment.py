@@ -1,40 +1,48 @@
-from ticks_utils import ticks_add, ticks_less, ticks_ms
-from contracts import SaberModule
 
+from adafruit_ble.characteristics import Characteristic, ComplexCharacteristic
 
 class ConfigSegment:
-    config_segment = 'example'
-    config_manager = None
-    config_data = dict()
+    __tracked_attrs: tuple = tuple()
+    __config_manager = None
 
-    def __init__(self, segment_name, manager) -> None:
-        self.config_segment = segment_name
-        self.config_manager = manager
-        self.config_data = dict()
+    def setup_tracking(self, config_manager) -> None:
+        tracked_attrs = []
+        for attr_name in dir(self.__class__):
+            if attr_name.startswith("__"):
+                continue
+            value = getattr(self.__class__, attr_name)
+            if not isinstance(value, Characteristic) and not isinstance(value, ComplexCharacteristic):
+                continue
 
-    def __str__(self):
-        return str(self.config_data)
+            tracked_attrs.append(attr_name)
+            setattr(self, '_old_val_' + attr_name, getattr(self, attr_name))
+        self.__tracked_attrs = tuple(tracked_attrs)
+        self.__config_manager = config_manager
     
-    def __repr__(self) -> str:
-        return repr(self.config_data)
+    def obj_changed(self) -> bool:
+        return len(self.changed_attrs()) > 0
+
+    def changed_attrs(self) -> list[str]:
+        changed_attrs = []
+        for attr_name in self.__tracked_attrs:
+            if self.attr_changed(attr_name):
+                changed_attrs.append(attr_name)
+        if len(changed_attrs) > 0:
+            print("Changed attributes:", repr(changed_attrs))
+        return changed_attrs
+    
+    def attr_changed(self, attr_name: str) -> bool:
+        old_val = getattr(self, '_old_val_' + attr_name)
+        current_val = getattr(self, attr_name)
+        setattr(self, '_old_val_' + attr_name, current_val)
+        self.__config_manager.request_write()
+        return old_val != current_val
+    
+    def get_data(self):
+        return {attr_name: getattr(self, attr_name) for attr_name in self.__tracked_attrs}
 
     def set_data(self, segment_data):
-        for (k, v) in segment_data.items():
-            self.set_config_value(k, v)
-
-    def get_data(self):
-        return self.config_data.copy()
-    
-    def process_config_default(self, prop_name, default_value):
-        if default_value is not None and not prop_name in self.config_data.keys():
-            self.set_config_value(prop_name, default_value)
-
-    def get_config_value(self, prop_name, default=None):
-        """Return the current value for a particular config."""
-        rv = self.config_data.get(prop_name, default)
-        return rv
-    
-    def set_config_value(self, prop_name, new_value):
-        """Set the current value for a particular config."""
-        self.config_data[prop_name] = new_value
-        self.config_manager.request_write()
+        for config_key, config_val in segment_data.items():
+            if not hasattr(self, config_key):
+                continue
+            setattr(self, config_key, config_val)

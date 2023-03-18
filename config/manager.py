@@ -43,7 +43,9 @@ class ConfigManager(SaberModule):
                         print("Config key has invalid data, continuing:", k)
                         continue
                     segment = self.segments.get(k, None)
-                    segment = segment or ConfigSegment(k, self)
+                    if segment is None:
+                        print("Could not find segment for key:", repr(k))
+                        continue
                     segment.set_data(v)
                     self.segments[k] = segment
         except OSError as ose:
@@ -52,14 +54,14 @@ class ConfigManager(SaberModule):
                 print("Ignoring missing file.")
 
     def __write_file(self):
-        print("Writing config.")
+        print("Writing config:", self.segments)
         self.ticks_write = ticks_add(ticks_ms(), self.write_interval)
         self.enable_write = False
 
         config_data = {}
 
         for (key, segment) in self.segments.items():
-            config_data[segment.config_segment] = segment.get_data()
+            config_data[key] = segment.get_data()
 
         with open(self.file_name, 'w') as config_file:
             json.dump(config_data, config_file)
@@ -82,8 +84,12 @@ class ConfigManager(SaberModule):
         '''Set up the config provider, including reading data from file.'''
         # Note: `config` will always be nonsense. This has to get called in 
         # order for future modules to have a config object.
-        self.__read_file()
         print('Config as of initial setup:', repr(self.segments))
+
+    def read_data(self):
+        # TODO: Can we use `request_read` instead?
+        self.__read_file()
+        print('Config as of initial read:', repr(self.segments))
     
     def loop(self, _frame: int, _state):
         # We need this in order to check on "timers"
@@ -94,9 +100,12 @@ class ConfigManager(SaberModule):
         if self.enable_write and ticks_less(self.ticks_write, ticks_ms()):
             self.__write_file()
 
-    def get_config_segment(self, segment_name):
-        rv = self.segments.get(segment_name, None)
-        if rv is None:
-            rv = ConfigSegment(segment_name, self)
-            self.segments[segment_name] = rv
+    def get_config_segment(self, sabermod, mod_index):
+        if not hasattr(sabermod, 'config_type'):
+            return None
+        rv_type = getattr(sabermod, 'config_type')
+        rv = rv_type()
+        segment_name = type(sabermod).__name__ + str(mod_index)
+        self.segments[segment_name] = rv
+        rv.setup_tracking(self)
         return rv

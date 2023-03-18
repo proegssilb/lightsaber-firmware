@@ -51,10 +51,3 @@ class SaberModule:
         """ Resume coming out of a deep sleep. """
         pass
 
-    @classmethod
-    def build_config_prop_args(cls, prop_name):
-        return (
-            lambda self: self.config.get_config_value(prop_name), 
-            lambda self, val: self.config.set_config_value(prop_name, val)
-            )
-

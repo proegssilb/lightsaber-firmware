@@ -1,17 +1,29 @@
 import audiomixer
 import audiocore
 
+from adafruit_ble.services import Service
+from adafruit_ble.characteristics.float import FloatCharacteristic
+
+from ble_utils import gen_service_id, make_characteristic_id_gen, CharPerms
 from contracts import SaberModule, States
+from config import ConfigSegment
+
 
 class Effects:
     HUM = 0
     IGNITE = 1
     RETRACT = 2
 
-class BasicSoundLogic(SaberModule):
-    master_volume = property(*SaberModule.build_config_prop_args('MASTER_VOLUME'))
+SERVICE_ID = 0x309f
+mk_char_id = make_characteristic_id_gen(SERVICE_ID)
 
+class BasicSoundConfig(Service, ConfigSegment):
+    uuid = gen_service_id(SERVICE_ID)
+    master_volume = FloatCharacteristic(uuid=mk_char_id(0x0001), initial_value=0.9, properties=CharPerms.RWN)
+
+class BasicSoundLogic(SaberModule):
     """ Which audiomixer.Mixer instance should be used for playing sounds. Should support 2+ voices."""
+    
     mixer = None
 
     volumes = {
@@ -26,7 +38,6 @@ class BasicSoundLogic(SaberModule):
 
     def setup(self, config, saber):
         super(BasicSoundLogic, self).setup(config, saber)
-        self.config.process_config_default('MASTER_VOLUME', 0.9)
 
     def change_sound_font(self, new_font):
         pass

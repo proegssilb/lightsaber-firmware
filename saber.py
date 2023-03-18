@@ -28,9 +28,9 @@ class Saber:
         self.modules = list(self.build_module_list(*mods))
         self.state = States.DEFAULT
         for (idx, m) in enumerate(self.modules):
-            conf_segment_name = type(m).__name__ + str(idx)
-            conf_segment = self.saber_build.CONFIG_MANAGER.get_config_segment(conf_segment_name)
+            conf_segment = self.saber_build.CONFIG_MANAGER.get_config_segment(m, idx)
             m.setup(conf_segment, self)
+        self.saber_build.CONFIG_MANAGER.read_data()
 
         self.saber_build.CONFIG_MANAGER.request_write()
 
