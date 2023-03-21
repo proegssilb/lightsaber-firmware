@@ -35,7 +35,8 @@ class ConfigSegment:
         old_val = getattr(self, '_old_val_' + attr_name)
         current_val = getattr(self, attr_name)
         setattr(self, '_old_val_' + attr_name, current_val)
-        self.__config_manager.request_write()
+        if old_val != current_val:
+            self.__config_manager.request_write()
         return old_val != current_val
     
     def get_data(self):

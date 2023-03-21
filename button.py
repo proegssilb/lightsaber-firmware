@@ -19,6 +19,7 @@ class OnOffButtonConfig(ConfigSegment, Service):
 
 
 class OnOffButton(SaberModule):
+    """Manages an illuminated button over i2c. Uses said button to turn the saber on an off, doing nothing else."""
     clear_state_register = bytes([0x00])
     config_type = OnOffButtonConfig
 
