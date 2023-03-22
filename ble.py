@@ -16,19 +16,10 @@ class BleConfigService(SaberModule):
         self.ble = BLERadio()
         self.device_info = DeviceInfoService(manufacturer="Khyber Squadron", software_revision="0.1.1", model_number="Proto00-Gen0-v0")
         self.advertisement = ProvideServicesAdvertisement(self.device_info)
-        self.services = list()
-
 
     def setup(self, config, saber):
         super().setup(config, saber)
-        self.services = list()
-        mods = self.get_modules(saber)
-        for (idx, mod) in enumerate(mods):
-            if not hasattr(mod, 'uuid'):
-                continue
-            svc = self.get_service(idx, mod, config, saber)
-            self.services.append(svc)
-        advertisement = ProvideServicesAdvertisement(self.device_info, *self.services)
+        advertisement = ProvideServicesAdvertisement(self.device_info)
         self.ble.start_advertising(advertisement)
 
     def get_modules(self, saber):
