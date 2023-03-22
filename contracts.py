@@ -15,7 +15,7 @@ class SaberModule:
 
     A Saber Module manages a particular subsystem of the saber.
     """
-    saber: Saber = None
+    saber = None
     config = None
 
     def setup(self, config, saber):
@@ -50,3 +50,4 @@ class SaberModule:
     def sleep_resume(self):
         """ Resume coming out of a deep sleep. """
         pass
+
