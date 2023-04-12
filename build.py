@@ -25,11 +25,11 @@ STORAGE_MODULES = (SdStorage(board.SPI(), board.A5),)
 CONFIG_MANAGER = ConfigManager()
 
 # These should all have a sane config object
-LED_MODULE = AnalogLedController(board.D11)
+LED_MODULE = AnalogLedController(board.A0)
 
 SOUND_LOGIC = BasicSoundLogic()
 
-SOUND_OUT = I2SSoundOut(SOUND_LOGIC.mixer, board.A0, board.A1, board.A2)
+SOUND_OUT = I2SSoundOut(SOUND_LOGIC.mixer, board.D6, board.D9, board.D5)
 
 CONTROLS = (OnOffButton(), OnOffButton(0x6E))
 
