@@ -13,15 +13,15 @@ CONF_BRIGHTNESS_KEY = "button_brightness"
 SERVICE_ID = 0x00b1
 mk_char_id = make_characteristic_id_gen(SERVICE_ID)
 
-class OnOffButtonConfig(ConfigSegment, Service):
+class I2cOnOffButtonConfig(ConfigSegment, Service):
     uuid = gen_service_id(SERVICE_ID)
     brightness = Uint16Characteristic(uuid=mk_char_id(0x0001), initial_value=0x40, properties=CharPerms.RWN)
 
 
-class OnOffButton(SaberModule):
+class I2cOnOffButton(SaberModule):
     """Manages an illuminated button over i2c. Uses said button to turn the saber on and off, doing nothing else."""
     clear_state_register = bytes([0x00])
-    config_type = OnOffButtonConfig
+    config_type = I2cOnOffButtonConfig
 
     i2c_address = 0x6F
     button = None
@@ -33,13 +33,13 @@ class OnOffButton(SaberModule):
     led_pulse_off_register = 0x1E
 
     def __init__(self, i2c_address=None):
-        super(OnOffButton, self).__init__()
+        super(I2cOnOffButton, self).__init__()
 
         # If the user supplied an address, use it. Else, use our default.
         self.i2c_address = i2c_address or self.i2c_address
 
     def setup(self, config, saber: Saber):
-        super(OnOffButton, self).setup(config, saber)
+        super(I2cOnOffButton, self).setup(config, saber)
 
     def set_button_to_off_state(self):
         with I2CDevice(self.i2c_address) as button:
