@@ -91,7 +91,3 @@ class I2cOnOffButton(SaberModule):
     def deep_sleep(self):
         self.set_button_to_off_state()
         # I'd also set the button controller to sleep if it had that option.
-
-    def sleep_resume(self):
-        # Handle register setting when we get the state change message
-        pass
