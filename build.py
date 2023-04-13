@@ -11,7 +11,8 @@ __all__ = ('STORAGE_MODULES', 'CONFIG_MANAGER', 'LED_MODULE', 'SOUND_OUT', 'SOUN
 import board
 
 from config import ConfigManager
-from button import OnOffButton
+from i2cbutton import I2cOnOffButton
+from rawbutton import RawOnOffButton
 from lights.led import AnalogLedController
 from sound_logic import BasicSoundLogic
 from fsplug.sdcard import SdStorage
@@ -25,12 +26,12 @@ STORAGE_MODULES = (SdStorage(board.SPI(), board.A5),)
 CONFIG_MANAGER = ConfigManager()
 
 # These should all have a sane config object
-LED_MODULE = AnalogLedController(board.D11)
+LED_MODULE = AnalogLedController(board.A0)
 
 SOUND_LOGIC = BasicSoundLogic()
 
-SOUND_OUT = I2SSoundOut(SOUND_LOGIC.mixer, board.A0, board.A1, board.A2)
+SOUND_OUT = I2SSoundOut(SOUND_LOGIC.mixer, board.D12, board.D11, board.D13)
 
-CONTROLS = (OnOffButton(), OnOffButton(0x6E))
+CONTROLS = (RawOnOffButton(board.A1, board.A2),) #  I2cOnOffButton(0x6E)
 
 OTHER_MODULES = (BleConfigService(CONFIG_MANAGER, '7d0ad01b-7699-494e-b638-c3ec8cdd11d3'),)

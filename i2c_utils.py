@@ -1,13 +1,16 @@
 
 from adafruit_bus_device.i2c_device import I2CDevice
 import board
+import busio
+
+default_bus = busio.I2C(board.SCL, board.SDA, frequency=1_000_000)
 
 class I2CDevice:
     bus = None
     address = None
 
     def __init__(self, address: int, bus=None):
-        self.bus = bus or board.I2C()
+        self.bus = bus or default_bus
         self.address = address
 
     def __enter__(self):
