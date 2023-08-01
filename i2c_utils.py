@@ -3,14 +3,19 @@ from adafruit_bus_device.i2c_device import I2CDevice
 import board
 import busio
 
-default_bus = busio.I2C(board.SCL, board.SDA, frequency=1_000_000)
+_default_bus = None
+
+def default_bus():
+    if _default_bus is None:
+        _default_bus = busio.I2C(board.SCL, board.SDA, frequency=1_000_000)
+    return _default_bus
 
 class I2CDevice:
     bus = None
     address = None
 
     def __init__(self, address: int, bus=None):
-        self.bus = bus or default_bus
+        self.bus = bus or default_bus()
         self.address = address
 
     def __enter__(self):
