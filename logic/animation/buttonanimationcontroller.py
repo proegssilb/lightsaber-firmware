@@ -42,8 +42,8 @@ class ButtonAnimationController(SaberModule):
         if was_pressed and not now_is_pressed:
             self.toggle_power()
 
-    async def on_anim_finished(self, was_finished, is_finished):
-        print("Anim finished callback called.")
+    async def on_anim_finished(self, is_finished, was_finished):
+        print("Anim finished callback called. From", was_finished, "to", is_finished)
         if not was_finished and is_finished:
             self.interrupt_anim.value = None
             self.active_anim.value = self.base_anim.value
@@ -55,8 +55,10 @@ class ButtonAnimationController(SaberModule):
             self.anim_finished.value = False
             self.base_anim.value = Animations.OFF
             self.interrupt_anim.value = Animations.RETRACT
+            self.active_anim.value = self.interrupt_anim.value
         else:
             print("Button event received, turning power ON")
             self.anim_finished.value = False
             self.base_anim.value = Animations.ON
             self.interrupt_anim.value = Animations.IGNITE
+            self.active_anim.value = self.interrupt_anim.value

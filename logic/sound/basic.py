@@ -27,7 +27,7 @@ class BasicSoundConfig(Service, ConfigSegment):
     hum_volume = FloatCharacteristic(uuid=mk_char_id(0x0001), initial_value=0.9, properties=CharPerms.RWN)
     ignite_volume = FloatCharacteristic(uuid=mk_char_id(0x0002), initial_value=0.9, properties=CharPerms.RWN)
     retract_volume = FloatCharacteristic(uuid=mk_char_id(0x0003), initial_value=0.9, properties=CharPerms.RWN)
-    hum_duck_volume = FloatCharacteristic(uuid=mk_char_id(0x0004), initial_value=0.1, properties=CharPerms.RWN)
+    hum_duck_volume = FloatCharacteristic(uuid=mk_char_id(0x0004), initial_value=0.01, properties=CharPerms.RWN)
 
 class BasicSoundLogic(SaberModule):
     mixer: audiomixer.Mixer
@@ -87,13 +87,20 @@ class BasicSoundLogic(SaberModule):
             self.stop_voice(0)
 
     async def on_interrupt_anim_change(self, new_anim, old_anim):
+        print("Mixer received interrupt anim change from", old_anim, "to", new_anim )
         if new_anim is None:
+            print("Mixer not playing interrupt")
             self.stop_voice(1)
+            self.unduck_main()
             self.interrupt_was_playing = False
         elif new_anim is Animations.IGNITE:
+            print("Mixer playing ignite")
+            self.duck_main()
             self.play_sample(1, self.config.ignite_volume, "/sd/SmthJedi/out01.wav", False)
             self.interrupt_was_playing = True
         elif new_anim is Animations.RETRACT:
+            print("Mixer playing retract")
+            self.duck_main()
             self.play_sample(1, self.config.ignite_volume, "/sd/SmthJedi/in01.wav", False)
             self.interrupt_was_playing = True
 
@@ -111,4 +118,12 @@ class BasicSoundLogic(SaberModule):
         self.wave_files[voice_num] = wave_data
         sample = audiocore.WaveFile(wave_data)
         self.mixer.voice[voice_num].play(sample, loop = loop_sound)
+
+    def duck_main(self):
+        print("Ducking main volume")
+        self.mixer.voice[0].level = self.config.hum_duck_volume
+
+    def unduck_main(self):
+        print("Unducking main volume")
+        self.mixer.voice[0].level = self.config.hum_volume
 
