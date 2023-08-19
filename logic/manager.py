@@ -79,7 +79,7 @@ class ConfigManager(SaberModule):
 
     def request_write(self, force=False):
         '''Set a flag to write the config file at the next save interval'''
-        if force or self.ns_write is None or self.ns_write < time.monotonic_ns:
+        if force or self.ns_write is None or self.ns_write < time.monotonic_ns():
             self.__write_file()
         else:
             self.enable_write = True
