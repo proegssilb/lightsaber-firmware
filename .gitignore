@@ -5,3 +5,5 @@ boot_out.txt
 lib/
 secrets.json
 settings.toml
+
+__pycache__

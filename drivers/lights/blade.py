@@ -5,6 +5,7 @@ from adafruit_ble.services import Service
 from adafruit_ble.characteristics.int import Uint16Characteristic
 
 from domain.ble import gen_service_id, make_characteristic_id_gen, CharPerms
+from domain.range import clamp_to_range
 from domain.sabermodule import SaberModule
 
 # The gen1 board has a 25% duty cycle limit due to a lack of current-regulating resistors.
@@ -32,4 +33,6 @@ class AnalogLedController(SaberModule):
         await super(AnalogLedController, self).run()
 
     async def on_led_change(self, new_value, old_value):
-        self.__pwm_out.duty_cycle = max(min(new_value, MAX_BRIGHTNESS), MIN_BRIGHTNESS)
+        print("Setting blade to value", new_value)
+        self.__pwm_out.duty_cycle = clamp_to_range(MIN_BRIGHTNESS, MAX_BRIGHTNESS, new_value)
+        
