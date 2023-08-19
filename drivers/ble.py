@@ -4,7 +4,7 @@ from adafruit_ble import BLERadio
 from adafruit_ble.advertising.standard import ProvideServicesAdvertisement
 from adafruit_ble.services.standard.device_info import DeviceInfoService
 
-from contracts import SaberModule
+from domain.sabermodule import SaberModule
 
 _bleio.adapter.name = "SABERG0"
 
@@ -14,11 +14,11 @@ class BleConfigService(SaberModule):
         super().__init__()
         self.config_manager = config_manager
         self.ble = BLERadio()
-        self.device_info = DeviceInfoService(manufacturer="Khyber Squadron", software_revision="0.1.1", model_number="Proto00-Gen0-v0")
+        self.device_info = DeviceInfoService(manufacturer="Kyber Squadron", software_revision="0.1.1", model_number="Proto00-Gen0-v0")
         self.advertisement = ProvideServicesAdvertisement(self.device_info)
 
-    def setup(self, config, saber):
-        super().setup(config, saber)
+    async def setup(self, config):
+        await super().setup(config)
         advertisement = ProvideServicesAdvertisement(self.device_info)
         self.ble.start_advertising(advertisement)
 
@@ -28,15 +28,5 @@ class BleConfigService(SaberModule):
     def get_service(self, mod_index: int, mod: SaberModule, config, saber):
         return mod
 
-
-    def loop(self, frame: int, state):
-        pass
-
-    def handle_state_change(self, old_state, new_state):
-        pass
-
-    def deep_sleep(self):
-        pass
-
-    def sleep_resume(self):
-        pass
+    async def run(self):
+        await super(BleConfigService, self).run()

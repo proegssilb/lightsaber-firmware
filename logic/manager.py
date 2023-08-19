@@ -1,15 +1,15 @@
 import json
+import time
 
-from ticks_utils import ticks_add, ticks_less, ticks_ms
-from contracts import SaberModule
-from config.segment import ConfigSegment
+from domain.ticks_utils import ticks_add, ticks_less, ticks_ms
+from domain.sabermodule import SaberModule
 
 class ConfigManager(SaberModule):
     file_name = '/sd/saber_config.json'
-    ticks_read = None
-    ticks_write = None
+    ns_read = None
+    ns_write = None
     segments = dict()
-    write_interval = 30000 # Number of milliseconds to write a file
+    write_interval = 30_000_000 # Number of milliseconds to write a file
     enable_read = False
     enable_write = False
 
@@ -18,14 +18,14 @@ class ConfigManager(SaberModule):
         self.segments = dict()
         if file_name is not None:
             self.file_name = file_name
-        self.ticks_read = None
-        self.ticks_write = None
+        self.ns_read = None
+        self.ns_write = None
         self.enable_read = False
         self.enable_write = False
 
     def __read_file(self):
         print("Reading config.")
-        self.ticks_read = ticks_add(ticks_ms(), self.write_interval)
+        self.ns_read = time.monotonic_ns() + self.write_interval
         self.enable_read = False
 
         try:
@@ -55,7 +55,7 @@ class ConfigManager(SaberModule):
 
     def __write_file(self):
         print("Writing config:", self.segments)
-        self.ticks_write = ticks_add(ticks_ms(), self.write_interval)
+        self.ns_write = ticks_add(ticks_ms(), self.write_interval)
         self.enable_write = False
 
         config_data = {}
@@ -63,28 +63,36 @@ class ConfigManager(SaberModule):
         for (key, segment) in self.segments.items():
             config_data[key] = segment.get_data()
 
-        with open(self.file_name, 'w') as config_file:
-            json.dump(config_data, config_file)
+        try:
+            with open(self.file_name, 'w') as config_file:
+                json.dump(config_data, config_file)
+        except OSError:
+            print("OSError while opening file:", self.file_name)
+            raise
 
     def request_read(self, force=False):
         '''Set a flag to reread the config file at the next save interval'''
-        if force or self.ticks_read is None or ticks_less(self.ticks_read, ticks_ms()):
+        if force or self.ns_read is None or self.ns_read < time.monotonic_ns():
             self.__read_file()
         else:
             self.enable_read = True
 
     def request_write(self, force=False):
         '''Set a flag to write the config file at the next save interval'''
-        if force or self.ticks_write is None or ticks_less(self.ticks_write, ticks_ms()):
+        if force or self.ns_write is None or self.ns_write < time.monotonic_ns:
             self.__write_file()
         else:
             self.enable_write = True
 
-    def setup(self, config, saber):
+    async def setup(self, config):
         '''Set up the config provider, including reading data from file.'''
         # Note: `config` will always be nonsense. This has to get called in 
         # order for future modules to have a config object.
         print('Config as of initial setup:', repr(self.segments))
+        await super(ConfigManager, self).setup(config)
+
+    async def run(self):
+        pass
 
     def read_data(self):
         # TODO: Can we use `request_read` instead?
@@ -94,18 +102,18 @@ class ConfigManager(SaberModule):
     def loop(self, _frame: int, _state):
         # We need this in order to check on "timers"
 
-        if self.enable_read and ticks_less(self.ticks_read, ticks_ms()):
+        if self.enable_read and ticks_less(self.ns_read, ticks_ms()):
             self.__read_file()
         
-        if self.enable_write and ticks_less(self.ticks_write, ticks_ms()):
+        if self.enable_write and ticks_less(self.ns_write, ticks_ms()):
             self.__write_file()
 
-    def get_config_segment(self, sabermod, mod_index):
-        if not hasattr(sabermod, 'config_type'):
+    def get_config_segment(self, sabermod: SaberModule, mod_index: int):
+        if not hasattr(sabermod, 'config_type') or sabermod.config_type is None:
             return None
-        rv_type = getattr(sabermod, 'config_type')
+        rv_type = sabermod.config_type
         rv = rv_type()
         segment_name = type(sabermod).__name__ + str(mod_index)
         self.segments[segment_name] = rv
-        rv.setup_tracking(self)
+        rv.setup_tracking(self.request_write)
         return rv

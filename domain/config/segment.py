@@ -1,11 +1,16 @@
 
 from adafruit_ble.characteristics import Characteristic, ComplexCharacteristic
 
+try:
+    from typing import Callable
+except:
+    pass
+
 class ConfigSegment:
     __tracked_attrs: tuple = tuple()
-    __config_manager = None
+    __write_hook: Callable[[], None]
 
-    def setup_tracking(self, config_manager) -> None:
+    def setup_tracking(self, write_hook: Callable[[], None]) -> None:
         tracked_attrs = []
         for attr_name in dir(self.__class__):
             if attr_name.startswith("__"):
@@ -17,7 +22,7 @@ class ConfigSegment:
             tracked_attrs.append(attr_name)
             setattr(self, '_old_val_' + attr_name, getattr(self, attr_name))
         self.__tracked_attrs = tuple(tracked_attrs)
-        self.__config_manager = config_manager
+        self.__write_hook = write_hook
     
     def obj_changed(self) -> bool:
         return len(self.changed_attrs()) > 0
@@ -36,7 +41,7 @@ class ConfigSegment:
         current_val = getattr(self, attr_name)
         setattr(self, '_old_val_' + attr_name, current_val)
         if old_val != current_val:
-            self.__config_manager.request_write()
+            self.__write_hook()
         return old_val != current_val
     
     def get_data(self):

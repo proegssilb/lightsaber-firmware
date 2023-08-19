@@ -1,11 +1,11 @@
 from adafruit_ble.services import Service
 from adafruit_ble.characteristics.int import Uint16Characteristic
 
-from contracts import SaberModule, States
+from domain.sabermodule import SaberModule, States
 from config import ConfigSegment
-from i2c_utils import I2CDevice
+from drivers.i2c import I2CDevice
 from saber import Saber
-from ble_utils import gen_service_id, make_characteristic_id_gen, CharPerms
+from domain.ble import gen_service_id, make_characteristic_id_gen, CharPerms
 
 
 CONF_BRIGHTNESS_KEY = "button_brightness"
