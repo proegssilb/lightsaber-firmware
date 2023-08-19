@@ -23,12 +23,13 @@ class RawButton(SaberModule):
     config_type = RawButtonConfig
     button_state: Observable[bool]
 
-    def __init__(self, button_pin, led_pin):
+    def __init__(self, button_pin, pull_direction=digitalio.Pull.DOWN):
         super(RawButton, self).__init__()
         self.__button_pin = digitalio.DigitalInOut(button_pin)
         self.__button_pin.direction = digitalio.Direction.INPUT
-        self.__button_pin.pull = digitalio.Pull.UP
+        self.__button_pin.pull = pull_direction
         self.__buton = Debouncer(self.__button_pin, interval=0.05)
+        self.__invert_logic: bool = (pull_direction == digitalio.Pull.UP)
         self.button_state = Observable()
 
     async def setup(self, config: RawButtonConfig):
@@ -48,7 +49,9 @@ class RawButton(SaberModule):
             # The pushbutton itself - normalize on pushed = true / released = false
             # (Using a bool is a temporary measure, need a more descriptive event enum)
             self.__buton.update()
-            self.button_state.value = not self.__buton.value
+            # This next line should actually be logical xor, but both sides are
+            # bool, so bitwise technically works.
+            self.button_state.value = bool(self.__buton.value ^ self.__invert_logic)
             await asyncio.sleep_ms(next_run - supervisor.ticks_ms())
     
     async def on_change(self, new_value, old_value):

@@ -15,6 +15,7 @@ __all__ = ('STORAGE_MODULES', 'CONFIG_MANAGER', 'LED_MODULE', 'SOUND_OUT', 'SOUN
 
 # There's going to be a number of imports. Keep scrolling for the spot where you configure stuff.
 import board
+from digitalio import Pull
 
 from logic.manager import ConfigManager
 from drivers.lights.blade import AnalogLedController
@@ -43,7 +44,8 @@ CONFIG_MANAGER = ConfigManager()
 # 
 # The main way of changing how a lightsaber works is to change the modules 
 # below, and how they communicate.
-BUTTON_MODULE = RawButton(board.A1, board.A2)      #  I2cOnOffButton(0x6E)
+BUTTON_MODULE = RawButton(board.A1, pull_direction=Pull.DOWN)      #  I2cOnOffButton(0x6E)
+# TODO: Module for power LED on A2
 
 ANIM_MODULE = ButtonAnimationController(BUTTON_MODULE.button_state)
 SOUND_LOGIC = BasicSoundLogic(ANIM_MODULE)
