@@ -56,14 +56,14 @@ class ConfigManager(SaberModule):
                 print("Ignoring missing file.")
 
     def __write_file(self):
-        print("Writing config:", self.segments)
         self.ns_write = ticks_add(ticks_ms(), self.write_interval)
         self.enable_write = False
 
         config_data = {}
-
         for (key, segment) in self.segments.items():
             config_data[key] = segment.get_data()
+
+        print("Writing config:", config_data)
 
         try:
             with open(self.file_name, 'w') as config_file:

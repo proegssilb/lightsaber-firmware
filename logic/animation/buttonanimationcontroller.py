@@ -27,10 +27,8 @@ class ButtonAnimationController(SaberModule):
     
     async def setup(self, config):
         await super().setup(config)
-        print("Button Anim Controller setup.")
         self.pow_btn.watch(self.on_button)
         self.anim_finished.watch(self.on_anim_finished)
-        print("anim_finished watched.")
     
     async def run(self):
         return await super().run()

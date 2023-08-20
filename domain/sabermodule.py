@@ -28,6 +28,7 @@ class SaberModule(BaseClass): # type: ignore
 
     async def setup(self, config: ConfigT):
         """ Do any first-power-on setup the subsystem needs to do. Init hardware, pub/sub observables, load data, etc. """
+        print("Setting up:", self)
         self.config = config
 
     async def run(self):
