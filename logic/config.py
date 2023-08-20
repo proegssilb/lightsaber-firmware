@@ -1,4 +1,6 @@
+import asyncio
 import json
+import supervisor
 import time
 
 from domain.ticks_utils import ticks_add, ticks_less, ticks_ms
@@ -6,8 +8,8 @@ from domain.sabermodule import SaberModule
 
 class ConfigManager(SaberModule):
     file_name = '/sd/saber_config.json'
-    ns_read = None
-    ns_write = None
+    ns_read: int = 0
+    ns_write: int = 0
     segments = dict()
     write_interval = 30_000_000 # Number of milliseconds to write a file
     enable_read = False
@@ -92,21 +94,29 @@ class ConfigManager(SaberModule):
         await super(ConfigManager, self).setup(config)
 
     async def run(self):
-        pass
+        await super(ConfigManager, self).run()
+
+        while True:
+            next_run = supervisor.ticks_ms() + 500
+
+            # TODO: Find a way to refresh the config without disrupting other
+            # modules ability to sync changed data.
+
+            # Handle auto-save
+            current_time = time.monotonic_ns()
+
+            if self.enable_read and self.ns_read < current_time:
+                self.__read_file()
+            if self.enable_write and self.ns_write < current_time:
+                self.__write_file()
+
+            await asyncio.sleep_ms(next_run - supervisor.ticks_ms())
+
 
     def read_data(self):
         # TODO: Can we use `request_read` instead?
         self.__read_file()
         print('Config as of initial read:', repr(self.segments))
-    
-    def loop(self, _frame: int, _state):
-        # We need this in order to check on "timers"
-
-        if self.enable_read and ticks_less(self.ns_read, ticks_ms()):
-            self.__read_file()
-        
-        if self.enable_write and ticks_less(self.ns_write, ticks_ms()):
-            self.__write_file()
 
     def get_config_segment(self, sabermod: SaberModule, mod_index: int):
         if not hasattr(sabermod, 'config_type') or sabermod.config_type is None:

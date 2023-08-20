@@ -17,7 +17,7 @@ __all__ = ('STORAGE_MODULES', 'CONFIG_MANAGER', 'LED_MODULE', 'SOUND_OUT', 'SOUN
 import board
 from digitalio import Pull
 
-from logic.manager import ConfigManager
+from logic.config import ConfigManager
 from drivers.lights.blade import AnalogLedController
 from logic.animation.buttonanimationcontroller import ButtonAnimationController
 from logic.light.baselit_render import BaselitRenderer
