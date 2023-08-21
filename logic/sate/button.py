@@ -1,9 +1,9 @@
 from domain.sabermodule import SaberModule
 from domain.observable import Observable
-from domain.animations import Animations
+from domain.states import States
 
 
-class ButtonAnimationController(SaberModule):
+class ButtonStateController(SaberModule):
     """
     An animation controller that only uses button(s) as its inputs.
 
@@ -21,8 +21,8 @@ class ButtonAnimationController(SaberModule):
     def __init__(self, power_button: Observable[bool]) -> None:
         super().__init__()
         self.pow_btn = power_button
-        self.base_anim.value = Animations.OFF
-        self.interrupt_anim.value = Animations.NONE
+        self.base_anim.value = States.OFF
+        self.interrupt_anim.value = States.NONE
         self.anim_finished.value = False
     
     async def setup(self, config):
@@ -48,15 +48,15 @@ class ButtonAnimationController(SaberModule):
     
     def toggle_power(self):
         print("Changing base anim from button event:", self.base_anim.value)
-        if self.base_anim.value == Animations.ON:
+        if self.base_anim.value == States.ON:
             print("Button event received, turning power OFF")
             self.anim_finished.value = False
-            self.base_anim.value = Animations.OFF
-            self.interrupt_anim.value = Animations.RETRACT
+            self.base_anim.value = States.OFF
+            self.interrupt_anim.value = States.RETRACT
             self.active_anim.value = self.interrupt_anim.value
         else:
             print("Button event received, turning power ON")
             self.anim_finished.value = False
-            self.base_anim.value = Animations.ON
-            self.interrupt_anim.value = Animations.IGNITE
+            self.base_anim.value = States.ON
+            self.interrupt_anim.value = States.IGNITE
             self.active_anim.value = self.interrupt_anim.value

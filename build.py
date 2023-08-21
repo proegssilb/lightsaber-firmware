@@ -17,15 +17,19 @@ __all__ = ('STORAGE_MODULES', 'CONFIG_MANAGER', 'LED_MODULE', 'SOUND_OUT', 'SOUN
 import board
 from digitalio import Pull
 
+from domain.time import ms
+from domain.states import States
 from logic.config import ConfigManager
 from drivers.lights.blade import AnalogLedController
-from logic.animation.buttonanimationcontroller import ButtonAnimationController
+from logic.sate.button import ButtonStateController
 from logic.light.baselit_render import BaselitRenderer
 from logic.sound.basic import BasicSoundLogic
 from storage.sdcard import SdStorage
 from drivers.sound.i2s import I2SSoundOut
 from drivers.ble import BleConfigService
 from drivers.buttons.rawbutton import RawButton
+
+import domain.animations as anim
 
 # These are "prereqs" in order for other modules to work. Keep this as short as
 # is feasible. Have very good engineering reason why something must go here 
@@ -47,9 +51,17 @@ CONFIG_MANAGER = ConfigManager()
 BUTTON_MODULE = RawButton(board.A1, pull_direction=Pull.DOWN)      #  I2cOnOffButton(0x6E)
 # TODO: Module for power LED on A2
 
-ANIM_MODULE = ButtonAnimationController(BUTTON_MODULE.button_state)
+ONC: anim.Color = anim.Color(0.7, 0.7, 0.7)
+OFFC: anim.Color = anim.Color(0.0, 0.0, 0.0)
+
+ANIM_MODULE = ButtonStateController(BUTTON_MODULE.button_state)
 SOUND_LOGIC = BasicSoundLogic(ANIM_MODULE)
-LED_LOGIC = BaselitRenderer(ANIM_MODULE)
+LED_LOGIC = BaselitRenderer(ANIM_MODULE, {
+    States.ON: anim.Steady(ONC),
+    States.OFF: anim.Steady(OFFC),
+    States.IGNITE: anim.FadeIn(ONC, off_time=ms(50), fade_in_time=ms(1400), on_time=ms(2000)),
+    States.RETRACT: anim.FadeOut(ONC, off_time=0, on_time=ms(100), fade_out_time=ms(1000))
+})
 
 LED_MODULE = AnalogLedController(board.A0, LED_LOGIC.led_brightness)
 

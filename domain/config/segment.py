@@ -32,8 +32,8 @@ class ConfigSegment:
         for attr_name in self.__tracked_attrs:
             if self.attr_changed(attr_name):
                 changed_attrs.append(attr_name)
-        if len(changed_attrs) > 0:
-            print("Changed attributes:", repr(changed_attrs))
+        for attribute in changed_attrs:
+            print("Changed attribute:", attribute, "=", getattr(self, attribute))
         return changed_attrs
     
     def attr_changed(self, attr_name: str) -> bool:

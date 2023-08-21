@@ -10,7 +10,7 @@ from domain.ble import gen_service_id, make_characteristic_id_gen, CharPerms
 from domain.observable import Observable
 from domain.sabermodule import SaberModule
 from domain.config import ConfigSegment
-from domain.animations import Animations
+from domain.states import States
 
 try:
     from typing import MutableSequence, Optional
@@ -57,7 +57,7 @@ class BasicSoundLogic(SaberModule):
 
             if self.config.obj_changed():
                 # Update the volume in the mixer based on what sound we're playing right now.
-                if self.base_anim.value == Animations.OFF:
+                if self.base_anim.value == States.OFF:
                     self.mixer.voice[0].level = 0
                 elif self.interrupt_anim.value is not None:
                     self.mixer.voice[0].level = self.config.hum_duck_volume
@@ -66,9 +66,9 @@ class BasicSoundLogic(SaberModule):
                 
                 if self.interrupt_anim.value is None:
                     self.mixer.voice[1].level = 0
-                elif self.interrupt_anim.value == Animations.IGNITE:
+                elif self.interrupt_anim.value == States.IGNITE:
                     self.mixer.voice[1].level = self.config.ignite_volume
-                elif self.interrupt_anim.value == Animations.RETRACT:
+                elif self.interrupt_anim.value == States.RETRACT:
                     self.mixer.voice[1].level = self.config.retract_volume
             
             if self.interrupt_anim.value is not None and self.interrupt_was_playing \
@@ -81,9 +81,9 @@ class BasicSoundLogic(SaberModule):
             await asyncio.sleep_ms(next_run - supervisor.ticks_ms())
 
     async def on_base_anim_change(self, new_anim, old_anim):
-        if new_anim == Animations.ON:
+        if new_anim == States.ON:
             self.play_sample(0, self.config.hum_volume, "/sd/SmthJedi/hum01.wav", True)
-        elif new_anim == Animations.OFF:
+        elif new_anim == States.OFF:
             self.stop_voice(0)
 
     async def on_interrupt_anim_change(self, new_anim, old_anim):
@@ -93,12 +93,12 @@ class BasicSoundLogic(SaberModule):
             self.stop_voice(1)
             self.unduck_main()
             self.interrupt_was_playing = False
-        elif new_anim is Animations.IGNITE:
+        elif new_anim is States.IGNITE:
             print("Mixer playing ignite")
             self.duck_main()
             self.play_sample(1, self.config.ignite_volume, "/sd/SmthJedi/out01.wav", False)
             self.interrupt_was_playing = True
-        elif new_anim is Animations.RETRACT:
+        elif new_anim is States.RETRACT:
             print("Mixer playing retract")
             self.duck_main()
             self.play_sample(1, self.config.ignite_volume, "/sd/SmthJedi/in01.wav", False)

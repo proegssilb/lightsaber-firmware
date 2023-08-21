@@ -5,16 +5,17 @@ import time
 from adafruit_ble.services import Service
 from adafruit_ble.characteristics.int import Uint16Characteristic
 
+from domain.animations import Animation
 from domain.ble import gen_service_id, make_characteristic_id_gen, CharPerms
 from domain.observable import Observable
 from domain.sabermodule import ConfigT, SaberModule
 from domain.config import ConfigSegment
-from domain.animations import Animations
+from domain.states import States, State
 from domain.range import interpolate
-from logic.time import anim_progress
+from domain.time import anim_progress
 
 try:
-    from typing import MutableSequence, Optional
+    from typing import MutableSequence, Optional, Dict
 except ImportError:
     pass
 
@@ -31,20 +32,21 @@ class BaselitRenderer(SaberModule):
     animation_controller: SaberModule
     anim_start: int = 0
     anim_time = 1_000_000_000 # TODO: Adjust this for variable frame rate
+    anim_map: Dict[State, Animation] = dict()
+    active_anim: Optional[Animation] = None
 
     led_brightness: Observable[int] = Observable()
-    active_anim: Observable[int]
 
-    def __init__(self, animation_controller: SaberModule):
+    def __init__(self, animation_controller: SaberModule, anim_map: Dict[State, Animation]):
         self.animation_controller = animation_controller
-        self.active_anim = animation_controller.active_anim
         self.led_brightness.value = 0
         self.anim_start = 0
-        
+        self.anim_map = anim_map
+        self.active_anim = None
 
     async def setup(self, config: BaselitLedRendererConfig):
         await super().setup(config)
-        self.animation_controller.active_anim.watch(self.on_anim_change)
+        self.animation_controller.active_anim.watch(self.on_state_change)
     
     async def run(self):
         await super().run()
@@ -54,25 +56,17 @@ class BaselitRenderer(SaberModule):
             if self.config.obj_changed():
                 pass
 
-            if self.active_anim.value == Animations.ON:
-                self.led_brightness.value = self.config.max_brightness
-            elif self.active_anim.value == Animations.OFF:
-                self.led_brightness.value = 0
-            elif self.active_anim.value == Animations.IGNITE:
-                frame = anim_progress(self.anim_start, self.anim_time, time.monotonic_ns())
-                led_val = int(interpolate(0, self.config.max_brightness, frame))
-                print("Animating blade. Frame:", frame, "LED Val:", led_val)
-                self.led_brightness.value = led_val
-            elif self.active_anim.value == Animations.RETRACT:
-                frame = anim_progress(self.anim_start, self.anim_time, time.monotonic_ns())
-                led_val = int(interpolate(self.config.max_brightness, 0, frame))
-                print("Animating blade. Frame:", frame, "LED Val:", led_val)
-                self.led_brightness.value = led_val
+
+            if self.active_anim is not None:
+                led_color = self.active_anim.render_loop(time.monotonic_ns() - self.anim_start)
+                self.led_brightness.value = int( 65000 * led_color.lightness)
 
             await asyncio.sleep_ms(next_run - supervisor.ticks_ms())
 
-    async def on_anim_change(self, new_anim, old_anim):
-        print("LED animation changed from", old_anim, "to", new_anim)
+    async def on_state_change(self, new_state, old_state):
+        print("Saber state changed from", old_state, "to", new_state)
+        self.active_anim = self.anim_map[new_state]
+        print("Switching to animation:", self.active_anim)
         self.anim_start = time.monotonic_ns()
         # TODO: Force LED to a brightness suitable for the start of the animation
         # (likely full-on/full-off?)
